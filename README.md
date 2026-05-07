@@ -47,13 +47,51 @@ This ensures tables exist (`CREATE TABLE` only for missing objects) and runs the
 ```
 ├── main.py              # CLI entrypoint
 ├── requirements.txt
+├── requirements-dev.txt # Adds pytest on top of runtime deps
+├── pytest.ini           # Test discovery + `pg` marker registration
 ├── .env.example         # Template (no secrets)
-└── src/
-    ├── config.py        # Environment → database URL
-    ├── database.py      # Engine, session factory, schema bootstrap
-    ├── models.py        # SQLAlchemy ORM models
-    └── pipeline.py      # extract / transform / load stubs
+├── src/
+│   ├── config.py        # Environment → database URL
+│   ├── database.py      # Engine, session factory, schema bootstrap
+│   ├── models.py        # SQLAlchemy ORM models
+│   └── pipeline.py      # extract / transform / load stubs
+└── tests/
+    ├── conftest.py             # Fixtures + `--run-pg` opt-in flag
+    ├── test_config.py          # database_url() behavior
+    ├── test_models.py          # ORM models against in-memory SQLite
+    ├── test_pipeline.py        # Stub + extract/transform/load wiring
+    └── test_pg_integration.py  # Real PostgreSQL (run with `--run-pg`)
 ```
+
+## Tests
+
+Install the dev dependencies once:
+
+```bash
+pip install -r requirements-dev.txt
+```
+
+Default suite (in-memory SQLite, no external services):
+
+```bash
+pytest
+```
+
+Integration suite against a real PostgreSQL — set `DATABASE_URL` first, then opt in with `--run-pg`:
+
+```bash
+# Example: throwaway Postgres in Docker
+docker run --name etl-pg -e POSTGRES_USER=etl -e POSTGRES_PASSWORD=etl -e POSTGRES_DB=etl_db -p 5432:5432 -d postgres:16
+
+# Windows PowerShell
+$env:DATABASE_URL = "postgresql://etl:etl@localhost:5432/etl_db"
+pytest --run-pg
+
+# Unix shell
+DATABASE_URL=postgresql://etl:etl@localhost:5432/etl_db pytest --run-pg
+```
+
+`@pytest.mark.pg` tests are skipped without `--run-pg` and use a transaction-rollback fixture, so committed rows are discarded on teardown.
 
 ## Conventions
 
