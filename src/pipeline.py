@@ -2,14 +2,18 @@
 
 from __future__ import annotations
 
+import logging
 from collections.abc import Iterable
-from typing import Any
+from typing import Any, Literal
 
 from sqlalchemy.orm import Session
 
 from src.extract import extract_sales
+from src.load import load as load_records
 from src.models import Sale
 from src.transform import transform_sales
+
+logger = logging.getLogger(__name__)
 
 
 def extract(session: Session) -> Iterable[dict[str, Any]]:
@@ -39,34 +43,43 @@ def transform(rows: Iterable[dict[str, Any]]) -> list[Sale]:
     return transform_sales(list(rows))
 
 
-def load(session: Session, rows: list[Sale]) -> int:
-    """Persist transformed rows (implement using your ORM models or bulk APIs).
+def load(
+    session: Session,
+    rows: list[Sale],
+    mode: Literal["bulk", "upsert"] = "bulk",
+) -> dict[str, int]:
+    """Persist transformed rows with configurable strategy.
 
     Args:
         session: Session to flush/commit (commit is handled by :func:`run_pipeline`).
         rows: Output of :func:`transform`.
+        mode: Loading strategy ('bulk' for insert-only, 'upsert' for insert-or-update).
 
     Returns:
-        Number of rows written or affected (domain-specific).
+        Summary dict with operation counts (inserted, updated, skipped, failed).
     """
-    if not rows:
-        return 0
-    session.add_all(rows)
-    session.flush()
-    return len(rows)
+    return load_records(session, rows, mode=mode)
 
 
-def run_pipeline(session: Session) -> dict[str, int]:
+def run_pipeline(
+    session: Session, load_mode: Literal["bulk", "upsert"] = "bulk"
+) -> dict[str, int]:
     """Execute extract → transform → load and commit.
 
     Args:
         session: Shared session for all stages.
+        load_mode: Loading strategy ('bulk' for insert-only, 'upsert' for insert-or-update).
 
     Returns:
-        Summary counts ``extracted`` and ``loaded``.
+        Summary dict with extracted, inserted, updated, skipped, and failed counts.
     """
     raw_list = list(extract(session))
     prepared = transform(raw_list)
-    inserted = load(session, prepared)
+    load_summary = load(session, prepared, mode=load_mode)
     session.commit()
-    return {"extracted": len(raw_list), "loaded": inserted}
+
+    return {
+        "extracted": len(raw_list),
+        "transformed": len(prepared),
+        **load_summary,
+    }

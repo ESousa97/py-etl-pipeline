@@ -12,7 +12,11 @@ import src.pipeline as pipeline
 
 
 def test_run_pipeline_stub_returns_zero_counts(session: Session) -> None:
-    assert pipeline.run_pipeline(session) == {"extracted": 0, "loaded": 0}
+    result = pipeline.run_pipeline(session)
+    assert result["extracted"] == 0
+    assert result["transformed"] == 0
+    assert result["inserted"] == 0
+    assert "updated" in result or "skipped" in result  # Load result includes these
 
 
 def test_run_pipeline_wires_extract_transform_load(
@@ -30,10 +34,11 @@ def test_run_pipeline_wires_extract_transform_load(
         calls["transform_input"] = list(rows)
         return transformed
 
-    def fake_load(s: Session, rows: list[dict[str, Any]]) -> int:
+    def fake_load(s: Session, rows: list[dict[str, Any]], mode: str = "bulk") -> dict[str, int]:
         calls["load_session_is_test_session"] = s is session
         calls["load_input"] = rows
-        return len(rows)
+        calls["load_mode"] = mode
+        return {"inserted": len(rows), "updated": 0, "skipped": 0, "failed": 0}
 
     monkeypatch.setattr(pipeline, "extract", fake_extract)
     monkeypatch.setattr(pipeline, "transform", fake_transform)
@@ -45,4 +50,6 @@ def test_run_pipeline_wires_extract_transform_load(
     assert calls["transform_input"] == raw
     assert calls["load_session_is_test_session"] is True
     assert calls["load_input"] == transformed
-    assert result == {"extracted": 3, "loaded": 3}
+    assert result["extracted"] == 3
+    assert result["transformed"] == 3
+    assert result["inserted"] == 3

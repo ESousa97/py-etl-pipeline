@@ -1,0 +1,26 @@
+Product Name,Quantity,Unit Price,Sold At,External ID
+Laptop,2,1299.99,2026-05-01T10:30:00Z,ext-laptop-001
+Mouse,5,29.99,2026-05-01T11:00:00Z,ext-mouse-001
+Keyboard,3,89.99,2026-05-01T11:30:00Z,ext-keyboard-001
+Monitor,1,399.99,2026-05-01T12:00:00Z,ext-monitor-001
+USB Cable,10,9.99,2026-05-01T12:30:00Z,ext-cable-001
+Laptop,1,1299.99,2026-05-02T09:00:00Z,ext-laptop-002
+Wireless Mouse,8,45.50,2026-05-02T10:00:00Z,ext-mouse-002
+Mechanical Keyboard,2,159.99,2026-05-02T11:00:00Z,ext-keyboard-002
+4K Monitor,1,799.99,2026-05-02T12:00:00Z,ext-monitor-002
+HDMI Cable,15,14.99,2026-05-02T13:00:00Z,ext-cable-002
+Gaming Laptop,1,1899.99,2026-05-03T08:00:00Z,ext-gaming-laptop-001
+RGB Mouse Pad,20,25.99,2026-05-03T09:00:00Z,ext-mousepad-001
+Mechanical Keyboard Pro,1,249.99,2026-05-03T10:00:00Z,ext-keyboard-pro-001
+Ultrawide Monitor,1,1099.99,2026-05-03T11:00:00Z,ext-ultrawide-001
+USB 3.0 Hub,5,49.99,2026-05-03T12:00:00Z,ext-hub-001
+Budget Laptop,3,699.99,2026-05-04T07:00:00Z,ext-budget-laptop-001
+Optical Mouse,12,19.99,2026-05-04T08:00:00Z,ext-optical-mouse-001
+Wireless Keyboard,4,79.99,2026-05-04T09:00:00Z,ext-wireless-kb-001
+IPS Monitor,2,549.99,2026-05-04T10:00:00Z,ext-ips-monitor-001
+USB-C Cable,25,12.99,2026-05-04T11:00:00Z,ext-usbc-cable-001
+Workstation Laptop,1,2499.99,2026-05-05T06:00:00Z,ext-workstation-001
+Vertical Mouse,6,35.99,2026-05-05T07:00:00Z,ext-vertical-mouse-001
+Split Keyboard,2,199.99,2026-05-05T08:00:00Z,ext-split-kb-001
+Curved Monitor,1,649.99,2026-05-05T09:00:00Z,ext-curved-001
+Docking Station,3,199.99,2026-05-05T10:00:00Z,ext-dock-001
