@@ -17,6 +17,7 @@ def _clean_env(monkeypatch: pytest.MonkeyPatch) -> None:
         "POSTGRES_HOST",
         "POSTGRES_PORT",
         "POSTGRES_DB",
+        "LOAD_BATCH_SIZE",
     ):
         monkeypatch.delenv(var, raising=False)
 
@@ -53,3 +54,23 @@ def test_uses_defaults_for_host_and_port(monkeypatch: pytest.MonkeyPatch) -> Non
 def test_raises_when_required_vars_missing() -> None:
     with pytest.raises(ValueError):
         _reload_config().database_url()
+
+
+def test_load_batch_size_defaults_to_500(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("LOAD_BATCH_SIZE", raising=False)
+    assert _reload_config().load_batch_size() == 500
+
+
+def test_load_batch_size_env_override(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("LOAD_BATCH_SIZE", "100")
+    assert _reload_config().load_batch_size() == 100
+
+
+def test_load_batch_size_invalid_falls_back(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("LOAD_BATCH_SIZE", "not-a-number")
+    assert _reload_config().load_batch_size() == 500
+
+
+def test_load_batch_size_minimum_one(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("LOAD_BATCH_SIZE", "0")
+    assert _reload_config().load_batch_size() == 1

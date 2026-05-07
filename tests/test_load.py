@@ -263,10 +263,41 @@ def test_load_upsert_postgresql_native(pg_session: Session) -> None:
 
     pg_session.flush()
 
-    # On PostgreSQL, should have processed the row
     assert result["failed"] == 0
+    assert result["inserted"] == 0
+    assert result["updated"] == 1
+    assert result["skipped"] == 0
 
-    # Verify the row exists and has the external_id
     queried = pg_session.query(Sale).filter_by(external_id="pg-ext-001").first()
     assert queried is not None
-    assert queried.external_id == "pg-ext-001"
+    assert queried.product_name == "PGProductUpdated"
+    assert queried.quantity == 10
+    assert queried.unit_price == Decimal("20.00")
+
+
+def test_load_bulk_insert_batches_rows(
+    session: Session,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Bulk insert should process rows in configured batch chunks."""
+    monkeypatch.setenv("LOAD_BATCH_SIZE", "2")
+    import importlib
+
+    import src.config as config
+    import src.load as load_mod
+
+    importlib.reload(config)
+    importlib.reload(load_mod)
+
+    sales = [
+        Sale(
+            external_id=f"b-{i}",
+            product_name=f"P{i}",
+            quantity=1,
+            unit_price=Decimal("1.00"),
+        )
+        for i in range(5)
+    ]
+    result = load_mod.load_bulk_insert(session, sales)
+    assert result == {"inserted": 5, "skipped": 0, "failed": 0}
+    assert session.query(Sale).count() == 5
