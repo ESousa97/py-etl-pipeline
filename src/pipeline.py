@@ -7,6 +7,10 @@ from typing import Any
 
 from sqlalchemy.orm import Session
 
+from src.extract import extract_sales
+from src.models import Sale
+from src.transform import transform_sales
+
 
 def extract(session: Session) -> Iterable[dict[str, Any]]:
     """Return raw records from the upstream source.
@@ -20,11 +24,10 @@ def extract(session: Session) -> Iterable[dict[str, Any]]:
     Returns:
         An iterable of dicts (one per raw row); shape is defined by :func:`transform`.
     """
-    _ = session
-    return []
+    return extract_sales(session)
 
 
-def transform(rows: Iterable[dict[str, Any]]) -> list[dict[str, Any]]:
+def transform(rows: Iterable[dict[str, Any]]) -> list[Sale]:
     """Normalize, validate, and enrich records before persistence.
 
     Args:
@@ -33,10 +36,10 @@ def transform(rows: Iterable[dict[str, Any]]) -> list[dict[str, Any]]:
     Returns:
         A concrete list ready for :func:`load`.
     """
-    return list(rows)
+    return transform_sales(list(rows))
 
 
-def load(session: Session, rows: list[dict[str, Any]]) -> int:
+def load(session: Session, rows: list[Sale]) -> int:
     """Persist transformed rows (implement using your ORM models or bulk APIs).
 
     Args:
@@ -46,8 +49,11 @@ def load(session: Session, rows: list[dict[str, Any]]) -> int:
     Returns:
         Number of rows written or affected (domain-specific).
     """
-    _ = session, rows
-    return 0
+    if not rows:
+        return 0
+    session.add_all(rows)
+    session.flush()
+    return len(rows)
 
 
 def run_pipeline(session: Session) -> dict[str, int]:

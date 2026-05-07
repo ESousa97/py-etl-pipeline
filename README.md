@@ -42,6 +42,25 @@ python main.py
 
 This ensures tables exist (`CREATE TABLE` only for missing objects) and runs the pipeline stub.
 
+## CSV input (extract + transform)
+
+The default pipeline `extract()` reads a CSV file configured by the environment variable `SALES_CSV_PATH`.
+
+- If `SALES_CSV_PATH` is **unset** or points to a missing file, the pipeline extracts **zero** rows (keeps the skeleton runnable by default).
+- The extractor uses **pandas** to read the CSV and normalizes column names to lower-case, underscore-separated tokens (e.g. `Unit Price` → `unit_price`).
+
+### Expected columns (after normalization)
+
+`transform()` builds `Sale` ORM objects from the normalized rows. Supported inputs:
+
+- `product_name` (required)
+- `quantity` (optional, defaults to 1)
+- `unit_price` (required)
+- `sold_at` (optional; parsed to UTC datetime when present)
+- `external_id` (optional)
+
+Business rule: `total_value = quantity * unit_price` is computed as a **transient attribute** on the `Sale` object (not persisted, since the table model does not include a column for it).
+
 ## Project layout
 
 ```
