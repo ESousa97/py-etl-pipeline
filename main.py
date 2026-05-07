@@ -2,10 +2,17 @@
 
 import logging
 import os
+import sys
 from typing import Literal
 
-from src.database import get_session, init_db
-from src.pipeline import run_pipeline
+# Allow running from repository root without installing the package: add src/ to sys.path
+ROOT = os.path.abspath(os.path.dirname(__file__))
+SRC_PATH = os.path.join(ROOT, "src")
+if SRC_PATH not in sys.path:
+    sys.path.insert(0, SRC_PATH)
+
+from py_etl_pipeline.database import get_session, init_db
+from py_etl_pipeline.pipeline import run_pipeline
 
 logging.basicConfig(
     level=logging.INFO,

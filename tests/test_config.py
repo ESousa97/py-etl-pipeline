@@ -23,7 +23,7 @@ def _clean_env(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 def _reload_config():
-    import src.config as config
+    import py_etl_pipeline.config as config
 
     return importlib.reload(config)
 

@@ -7,13 +7,13 @@ from decimal import Decimal
 import pytest
 from sqlalchemy.orm import Session
 
-from src.load import (
+from py_etl_pipeline.load import (
     load,
     load_bulk_insert,
     load_upsert,
     log_pipeline_event,
 )
-from src.models import LogEntry, Sale
+from py_etl_pipeline.models import LogEntry, Sale
 
 
 def test_load_bulk_insert_empty_list(session: Session) -> None:
@@ -283,8 +283,8 @@ def test_load_bulk_insert_batches_rows(
     monkeypatch.setenv("LOAD_BATCH_SIZE", "2")
     import importlib
 
-    import src.config as config
-    import src.load as load_mod
+    import py_etl_pipeline.config as config
+    import py_etl_pipeline.load as load_mod
 
     importlib.reload(config)
     importlib.reload(load_mod)

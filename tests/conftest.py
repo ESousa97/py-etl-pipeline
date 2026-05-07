@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import os
+import sys
 import warnings
 from collections.abc import Iterator
 
@@ -11,7 +13,13 @@ from sqlalchemy.engine import Engine
 from sqlalchemy.exc import DBAPIError, OperationalError
 from sqlalchemy.orm import Session, sessionmaker
 
-from src.models import Base
+# Ensure the src/ directory is on sys.path so `py_etl_pipeline` imports work
+ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+SRC_PATH = os.path.join(ROOT, "src")
+if SRC_PATH not in sys.path:
+    sys.path.insert(0, SRC_PATH)
+
+from py_etl_pipeline.models import Base
 
 
 def pytest_addoption(parser: pytest.Parser) -> None:
@@ -68,7 +76,7 @@ def pg_engine() -> Iterator[Engine]:
     warning when the URL is missing, points to a non-Postgres backend, or the
     server is unreachable / refuses authentication.
     """
-    from src.config import database_url
+    from py_etl_pipeline.config import database_url
 
     try:
         url = database_url()

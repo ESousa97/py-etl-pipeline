@@ -13,8 +13,6 @@ class Base(DeclarativeBase):
 
 
 class Sale(Base):
-    """Sales fact row (example domain table)."""
-
     __tablename__ = "sales"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
@@ -23,15 +21,11 @@ class Sale(Base):
     quantity: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
     unit_price: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
     sold_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        nullable=False,
-        server_default=func.now(),
+        DateTime(timezone=True), nullable=False, server_default=func.now()
     )
 
 
 class LogEntry(Base):
-    """Append-only application or pipeline log line."""
-
     __tablename__ = "logs"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
@@ -39,7 +33,5 @@ class LogEntry(Base):
     message: Mapped[str] = mapped_column(Text, nullable=False)
     source: Mapped[str | None] = mapped_column(String(128))
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        nullable=False,
-        server_default=func.now(),
+        DateTime(timezone=True), nullable=False, server_default=func.now()
     )

@@ -13,9 +13,18 @@ import logging
 from datetime import datetime
 from decimal import Decimal
 
-from src.database import get_session, init_db
-from src.load import load, log_pipeline_event
-from src.models import LogEntry, Sale
+import os
+import sys
+
+# Allow running from repository root without installing the package
+ROOT = os.path.abspath(os.path.dirname(__file__))
+SRC_PATH = os.path.join(ROOT, "src")
+if SRC_PATH not in sys.path:
+    sys.path.insert(0, SRC_PATH)
+
+from py_etl_pipeline.database import get_session, init_db
+from py_etl_pipeline.load import load, log_pipeline_event
+from py_etl_pipeline.models import LogEntry, Sale
 
 logging.basicConfig(
     level=logging.INFO,

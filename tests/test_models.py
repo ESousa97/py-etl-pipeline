@@ -9,7 +9,7 @@ from sqlalchemy import inspect, select
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session
 
-from src.models import Base, LogEntry, Sale
+from py_etl_pipeline.models import Base, LogEntry, Sale
 
 
 def test_metadata_registers_expected_tables() -> None:

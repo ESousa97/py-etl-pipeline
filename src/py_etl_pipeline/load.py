@@ -10,8 +10,8 @@ from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.orm import Session
 
-from src.config import load_batch_size
-from src.models import LogEntry, Sale
+from .config import load_batch_size
+from .models import LogEntry, Sale
 
 logger = logging.getLogger(__name__)
 
@@ -22,14 +22,6 @@ def log_pipeline_event(
     message: str,
     source: str = "pipeline.load",
 ) -> None:
-    """Persist a log entry to the database.
-
-    Args:
-        session: Active SQLAlchemy session.
-        level: Log level (e.g., 'INFO', 'WARNING', 'ERROR').
-        message: Log message content.
-        source: Origin identifier (default: 'pipeline.load').
-    """
     entry = LogEntry(level=level, message=message, source=source)
     session.add(entry)
 
@@ -40,7 +32,6 @@ def _chunks(items: list[Sale], size: int) -> Iterator[list[Sale]]:
 
 
 def _dedupe_last_wins(rows: list[Sale], key: str) -> list[Sale]:
-    """Collapse duplicate keys in ``rows``, keeping the last occurrence."""
     by_key: dict[Any, Sale] = {}
     for r in rows:
         by_key[getattr(r, key)] = r
@@ -48,17 +39,6 @@ def _dedupe_last_wins(rows: list[Sale], key: str) -> list[Sale]:
 
 
 def load_bulk_insert(session: Session, rows: list[Sale]) -> dict[str, int]:
-    """Load records using batched ``bulk_save_objects`` with minimal ORM overhead.
-
-    Rows are processed in batches of ``LOAD_BATCH_SIZE`` (default 500).
-
-    Args:
-        session: Active SQLAlchemy session.
-        rows: List of Sale ORM objects to insert.
-
-    Returns:
-        Dict with keys 'inserted' (count of inserted rows) and 'skipped' (always 0 for bulk insert).
-    """
     if not rows:
         logger.info("No rows to load (bulk insert)")
         log_pipeline_event(session, "INFO", "Bulk insert: 0 rows processed")
@@ -96,22 +76,6 @@ def load_upsert(
     rows: list[Sale],
     key: Literal["external_id"] = "external_id",
 ) -> dict[str, int]:
-    """Load records with upsert (insert or update on conflict) logic.
-
-    For PostgreSQL, uses ``ON CONFLICT DO UPDATE`` on the unique ``external_id``
-    column (natural key). Insert vs update counts use a pre-read of existing keys
-    per batch; concurrent writers can race between read and write.
-
-    For other databases, falls back to individual insert-or-update operations.
-
-    Args:
-        session: Active SQLAlchemy session.
-        rows: List of Sale ORM objects to insert or update.
-        key: Unique key column for conflict detection (default: ``external_id``).
-
-    Returns:
-        Dict with inserted, updated, skipped (rows without key), and failed counts.
-    """
     if not rows:
         logger.info("No rows to load (upsert)")
         log_pipeline_event(session, "INFO", "Upsert: 0 rows processed")
@@ -179,11 +143,6 @@ def _upsert_postgresql(
     key: str,
     batch_size: int,
 ) -> tuple[int, int, int]:
-    """PostgreSQL upsert using ``ON CONFLICT DO UPDATE`` in bounded batches.
-
-    Returns:
-        Tuple of (inserted_count, updated_count, skipped_count).
-    """
     key_column = getattr(Sale, key)
     skipped_count = sum(1 for r in rows if getattr(r, key) is None)
     keyed_rows = [r for r in rows if getattr(r, key) is not None]
@@ -197,9 +156,7 @@ def _upsert_postgresql(
         batch_unique = _dedupe_last_wins(batch, key)
         keys = [getattr(r, key) for r in batch_unique]
 
-        existing = session.scalars(
-            select(key_column).where(key_column.in_(keys))
-        ).all()
+        existing = session.scalars(select(key_column).where(key_column.in_(keys))).all()
         existing_set = set(existing)
 
         batch_inserted = 0
@@ -240,19 +197,12 @@ def _upsert_postgresql(
 
 
 def _upsert_single_row(session: Session, row: Sale, key: str) -> Literal["inserted", "updated", "skipped"]:
-    """Upsert a single row (fallback for non-PostgreSQL databases).
-
-    Returns:
-        One of: 'inserted', 'updated', 'skipped'.
-    """
     key_value = getattr(row, key)
     if key_value is None:
         logger.debug("Skipping row: %s is None", key)
         return "skipped"
 
-    existing = session.query(Sale).filter(
-        getattr(Sale, key) == key_value
-    ).first()
+    existing = session.query(Sale).filter(getattr(Sale, key) == key_value).first()
 
     if existing:
         existing.product_name = row.product_name
@@ -269,7 +219,6 @@ def _upsert_single_row(session: Session, row: Sale, key: str) -> Literal["insert
 
 
 def _row_to_dict(row: Sale) -> dict[str, Any]:
-    """Convert a Sale ORM object to a dictionary for bulk operations."""
     return {
         "external_id": row.external_id,
         "product_name": row.product_name,
@@ -285,17 +234,6 @@ def load(
     mode: Literal["bulk", "upsert"] = "bulk",
     upsert_key: Literal["external_id"] = "external_id",
 ) -> dict[str, int]:
-    """Load records into the database with configurable strategy.
-
-    Args:
-        session: Active SQLAlchemy session.
-        rows: List of Sale ORM objects.
-        mode: Loading strategy ('bulk' for insert-only, 'upsert' for insert-or-update).
-        upsert_key: Unique key column for conflict detection in upsert mode.
-
-    Returns:
-        Summary dict with operation counts.
-    """
     if mode == "bulk":
         return load_bulk_insert(session, rows)
     elif mode == "upsert":

@@ -18,7 +18,7 @@ from sqlalchemy import inspect
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session
 
-from src.models import LogEntry, Sale
+from py_etl_pipeline.models import LogEntry, Sale
 
 pytestmark = pytest.mark.pg
 

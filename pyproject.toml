@@ -1,0 +1,14 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "py-etl-pipeline"
+version = "0.1.0"
+description = "Minimal ETL pipeline with bulk loads and PostgreSQL upsert support"
+readme = "README.md"
+license = { text = "MIT" }
+authors = [ { name = "You", email = "you@example.com" } ]
+
+[project.urls]
+"Homepage" = "https://github.com/ESousa97/py-etl-pipeline"

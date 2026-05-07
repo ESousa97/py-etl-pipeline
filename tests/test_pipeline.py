@@ -8,7 +8,7 @@ from typing import Any
 import pytest
 from sqlalchemy.orm import Session
 
-import src.pipeline as pipeline
+import py_etl_pipeline.pipeline as pipeline
 
 
 def test_run_pipeline_stub_returns_zero_counts(session: Session) -> None:

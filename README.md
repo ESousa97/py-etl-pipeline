@@ -210,8 +210,8 @@ DATABASE_URL=postgresql://etl:etl@localhost:5432/etl_db pytest --run-pg
 ### Example 1: Simple Pipeline Run with Bulk Insert
 
 ```python
-from src.database import get_session, init_db
-from src.pipeline import run_pipeline
+from py_etl_pipeline.database import get_session, init_db
+from py_etl_pipeline.pipeline import run_pipeline
 
 init_db()
 session = get_session()
@@ -234,8 +234,8 @@ python main.py
 ### Example 3: Query Logs
 
 ```python
-from src.models import LogEntry
-from src.database import get_session
+from py_etl_pipeline.models import LogEntry
+from py_etl_pipeline.database import get_session
 
 session = get_session()
 logs = session.query(LogEntry).filter_by(source="pipeline.load").all()

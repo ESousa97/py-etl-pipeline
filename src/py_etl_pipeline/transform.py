@@ -8,7 +8,7 @@ from typing import Any
 
 import pandas as pd
 
-from src.models import Sale
+from .models import Sale
 
 
 def _to_int(value: Any, *, default: int | None = None) -> int | None:
@@ -26,7 +26,6 @@ def _to_decimal(value: Any) -> Decimal | None:
     if isinstance(value, Decimal):
         return value
     try:
-        # Use string conversion to preserve decimal semantics (avoid float artifacts)
         return Decimal(str(value))
     except (InvalidOperation, ValueError, TypeError):
         return None
@@ -41,29 +40,15 @@ def _to_datetime(value: Any) -> datetime | None:
         return None
     if pd.isna(ts):
         return None
-    # Ensure a Python datetime (tz-aware when utc=True)
     return ts.to_pydatetime()
 
 
 def transform_sales(rows: list[dict[str, Any]]) -> list[Sale]:
-    """Convert raw dicts into `Sale` ORM objects ready for insertion.
-
-    Expected (normalized) input columns:
-      - external_id (optional)
-      - product_name (required)
-      - quantity (optional, defaults to 1)
-      - unit_price (required)
-      - sold_at (optional; when missing, DB default applies)
-
-    Business rule:
-      - total_value = quantity * unit_price (stored as a transient attribute).
-    """
     out: list[Sale] = []
 
     for r in rows:
         product_name = (r.get("product_name") or r.get("product") or "").strip()
         if not product_name:
-            # Skip invalid row: cannot persist without required product_name
             continue
 
         qty = _to_int(r.get("quantity"), default=1)
@@ -72,7 +57,6 @@ def transform_sales(rows: list[dict[str, Any]]) -> list[Sale]:
 
         unit_price = _to_decimal(r.get("unit_price") or r.get("price"))
         if unit_price is None:
-            # Skip invalid row: cannot persist without unit_price
             continue
 
         sold_at = _to_datetime(r.get("sold_at") or r.get("soldat") or r.get("date"))
@@ -86,10 +70,8 @@ def transform_sales(rows: list[dict[str, Any]]) -> list[Sale]:
         if sold_at is not None:
             sale.sold_at = sold_at
 
-        # Transient computed field (not mapped/persisted) for downstream use.
         sale.total_value = unit_price * Decimal(qty)  # type: ignore[attr-defined]
 
         out.append(sale)
 
     return out
-
