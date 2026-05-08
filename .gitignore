@@ -5,3 +5,6 @@ __pycache__/
 *.py[cod]
 .Python
 .pytest_cache/
+validate.db
+demo.db
+data/_validate_*.csv

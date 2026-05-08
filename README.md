@@ -1,368 +1,77 @@
-# Python ETL Pipeline (PostgreSQL + SQLAlchemy)
+# py-etl-pipeline
 
-Minimal ETL skeleton: declarative models, PostgreSQL via SQLAlchemy `create_engine`, automatic table creation, and credentials from environment variables (`python-dotenv`).
+Minimal ETL pipeline: CSV → PostgreSQL via SQLAlchemy, with bulk insert, upsert, audit logging, retry, scheduling, and Docker Compose support.
 
 ## Features
 
-- **Extract**: Read from CSV files with automatic column normalization
-- **Transform**: Convert, validate, and enrich raw data into ORM objects
-- **Load**: Efficiently persist data with bulk inserts and upsert (insert-or-update) operations
-- **Logging**: Comprehensive logging to database for audit trails
-- **PostgreSQL Optimized**: Native `ON CONFLICT DO UPDATE` support for efficient upserts
-- **Fallback Support**: Works with SQLite, MySQL, Oracle, and other SQLAlchemy-supported databases
+- **Extract** — CSV via pandas with automatic column normalisation
+- **Transform** — type coercion, defaults, row validation
+- **Load** — bulk insert or PostgreSQL-native upsert (`ON CONFLICT DO UPDATE`)
+- **Audit log** — every load operation written to a `logs` table
+- **Resilience** — transient DB failures retried with tenacity (exponential backoff)
+- **Scheduling** — optional recurring runs via the `schedule` library
+- **Migrations** — Alembic with autogenerate against SQLAlchemy models
+- **Docker** — `docker-compose.yml` with Postgres 16 + ETL container
 
-## Requirements
-
-- Python 3.10+
-- PostgreSQL server reachable from this machine (or SQLite for testing)
-
-## Setup
+## Quick Start
 
 ```bash
-python -m venv .venv
-.venv\Scripts\activate          # Windows
-# source .venv/bin/activate     # Linux / macOS
-
+python -m venv .venv && .venv\Scripts\activate   # Windows
 pip install -r requirements.txt
-# Copy template → .env, then edit secrets (never commit .env)
-# Windows PowerShell: Copy-Item .env.example .env
-# Unix shell:        cp .env.example .env
-```
-
-## Configuration
-
-| Variable | Description |
-|----------|-------------|
-| `DATABASE_URL` | Full PostgreSQL URL (preferred). Example: `postgresql://user:pass@host:5432/dbname` |
-| `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB` | Used only if `DATABASE_URL` is unset |
-| `POSTGRES_HOST` | Default: `localhost` |
-| `POSTGRES_PORT` | Default: `5432` |
-| `LOAD_MODE` | Loading strategy: `bulk` (default) or `upsert` |
-| `SQLALCHEMY_ECHO` | Set to `true` / `1` / `yes` to log SQL statements |
-| `SALES_CSV_PATH` | Path to CSV file for extraction (optional) |
-
-Credentials must stay in `.env` or your secret manager; `.env` is gitignored.
-
-## Run
-
-From the project root:
-
-```bash
-# Default: bulk insert mode
-python main.py
-
-# Or with upsert (insert-or-update) mode
-LOAD_MODE=upsert python main.py
-```
-
-This ensures tables exist (`CREATE TABLE` only for missing objects) and runs the pipeline.
-
-## Load Module
-
-The **Load** stage implements high-performance data persistence with two strategies:
-
-### Bulk Insert (Default)
-
-Fast insertion of new records without duplicate handling:
-
-```bash
-LOAD_MODE=bulk python main.py
-```
-
-- Optimized for initial data loads
-- ~10,000-100,000 rows/sec throughput
-- Raises on constraint violations (duplicates)
-
-### Upsert (Insert-or-Update)
-
-Insert new records or update existing ones based on primary key:
-
-```bash
-LOAD_MODE=upsert python main.py
-```
-
-- **PostgreSQL**: Uses native `ON CONFLICT DO UPDATE` for atomic operations
-- **Other DBs**: Falls back to row-by-row processing
-- Skips records with missing keys (null / empty / NaN)
-- Logs operation counts (inserted, updated, skipped, failed)
-
-See [LOAD_MODULE.md](LOAD_MODULE.md) for complete documentation.
-
-## Validate Bulk + Upsert (One Command)
-
-To help users validate the load strategies, this repo includes a small, repeatable validation script.
-
-### Quick validation (no PostgreSQL required)
-
-Runs on a fresh local SQLite database and prints inserted/updated/skipped counts:
-
-```bash
-python scripts/validate_load.py
-```
-
-### Validate against PostgreSQL
-
-If you want to validate against a real PostgreSQL, pass an explicit URL (recommended to use a throwaway database):
-
-```powershell
-.\scripts\validate_load.ps1 -DatabaseUrl "postgresql://user:pass@127.0.0.1:5432/data_py_validate"
-```
-
-### Why bulk may fail on the 2nd run
-
-Bulk insert is **insert-only**. If you run the validator against the same database more than once, the first bulk step may fail with a unique-constraint error because the validation data uses fixed keys (e.g. `ext-1`).
-
-Options:
-
-- Use a fresh/throwaway database for validation (recommended)
-- Or truncate the `sales` table before re-running:
-
-```sql
-TRUNCATE TABLE sales RESTART IDENTITY;
-```
-
-## Database Migrations (Alembic)
-
-This project uses **Alembic** to manage schema migrations. It is configured to **autogenerate** migration scripts by comparing your SQLAlchemy models (`Base.metadata`) against the current database schema.
-
-### Install
-
-```bash
-pip install -r requirements-dev.txt
-```
-
-### Create a new migration (autogenerate)
-
-After changing models in `src/py_etl_pipeline/models.py`, generate a new revision:
-
-```bash
-# IMPORTANT: keep the target DB at the latest migration before autogenerate
-alembic upgrade head
-alembic revision --autogenerate -m "describe change"
-```
-
-This writes a new file under `migrations/versions/`.
-
-If you see this error:
-
-> `Target database is not up to date.`
-
-it means your database is behind the repository `head`. Fix it by running:
-
-```bash
-alembic upgrade head
-```
-
-### Apply migrations (upgrade)
-
-Apply all pending migrations to the latest version:
-
-```bash
-alembic upgrade head
-```
-
-### Rollback (downgrade)
-
-Rollback one migration:
-
-```bash
-alembic downgrade -1
-```
-
-Rollback to a specific revision id:
-
-```bash
-alembic downgrade <revision_id>
-```
-
-### Point Alembic at a different database (optional)
-
-Alembic reads the same `DATABASE_URL` / `POSTGRES_*` environment variables as the app.
-You can also override the URL for a single command:
-
-```bash
-alembic -x url=postgresql://user:pass@localhost:5432/dbname upgrade head
-```
-
-## CSV Input (Extract + Transform)
-
-The default pipeline `extract()` reads a CSV file configured by the environment variable `SALES_CSV_PATH`.
-
-- If `SALES_CSV_PATH` is **unset** or points to a missing file, the pipeline extracts **zero** rows (keeps the skeleton runnable by default).
-- The extractor uses **pandas** to read the CSV and normalizes column names to lower-case, underscore-separated tokens (e.g. `Unit Price` → `unit_price`).
-
-### Expected Columns (After Normalization)
-
-`transform()` builds `Sale` ORM objects from the normalized rows. Supported inputs:
-
-- `product_name` (required)
-- `quantity` (optional, defaults to 1)
-- `unit_price` (required)
-- `sold_at` (optional; parsed to UTC datetime when present)
-- `external_id` (optional; used as upsert key)
-
-**Business rule**: `total_value = quantity * unit_price` is computed as a **transient attribute** on the `Sale` object (not persisted, since the table model does not include a column for it).
-
-### Example CSV
-
-```csv
-Product Name,Quantity,Unit Price,Sold At,External ID
-Laptop,2,1299.99,2026-05-01T10:30:00Z,ext-laptop-001
-Mouse,5,29.99,2026-05-01T11:00:00Z,ext-mouse-001
-Keyboard,3,89.99,2026-05-01T11:30:00Z,ext-keyboard-001
-```
-
-To use the demo data:
-
-```bash
-$env:SALES_CSV_PATH = "data/sales_demo.csv"
+cp .env.example .env                             # then fill in DATABASE_URL
 python main.py
 ```
 
-## Demo Script
+The pipeline creates missing tables on first run and processes the CSV at `SALES_CSV_PATH`.
 
-Run the interactive demo to see all load module features:
+## Run Modes
 
 ```bash
-$env:DATABASE_URL = "sqlite:///demo.db"
-python demo_load.py
-```
+# One-shot (default)
+python main.py
 
-This demonstrates:
-- Bulk insert (1000 records)
-- Upsert with new records
-- Upsert with updates
-- Log querying and analysis
-- Skip handling for records without keys
+# Upsert mode
+$env:LOAD_MODE = "upsert"; python main.py
+
+# Scheduled (runs immediately, then every 60 min)
+$env:RUN_SCHEDULED = "true"; python main.py
+
+# Docker Compose (Postgres + ETL)
+docker compose up --build
+```
 
 ## Project Layout
 
 ```
-├── alembic.ini          # Alembic configuration
-├── main.py              # CLI entrypoint
-├── demo_load.py         # Interactive load module demonstration
-├── requirements.txt
-├── requirements-dev.txt # Adds pytest on top of runtime deps
-├── pytest.ini           # Test discovery + `pg` marker registration
-├── .env.example         # Template (no secrets)
-├── LOAD_MODULE.md       # Load module documentation
-├── migrations/          # Alembic migration environment + versions
-├── data/
-│   ├── sales_demo.csv   # Demo CSV data
-│   └── sales_test.csv   # Test CSV data
-├── src/
-│   ├── config.py        # Environment → database URL
-│   ├── database.py      # Engine, session factory, schema bootstrap
-│   ├── models.py        # SQLAlchemy ORM models
-│   ├── extract.py       # CSV extraction stage
-│   ├── transform.py     # Data transformation and validation
-│   ├── load.py          # Bulk insert and upsert operations
-│   └── pipeline.py      # ETL orchestration
-└── tests/
-    ├── conftest.py             # Fixtures + `--run-pg` opt-in flag
-    ├── test_config.py          # database_url() behavior
-    ├── test_models.py          # ORM models against in-memory SQLite
-    ├── test_load.py            # Load module (bulk insert and upsert)
-    ├── test_pipeline.py        # ETL orchestration
-    └── test_pg_integration.py  # Real PostgreSQL (run with `--run-pg`)
+src/py_etl_pipeline/
+  config.py        env-var parsing
+  database.py      engine, session factory, schema bootstrap
+  models.py        ORM models: Sale, LogEntry
+  extract.py       CSV extraction
+  transform.py     data validation and type coercion
+  load.py          load strategy dispatcher
+  load_bulk.py     bulk insert implementation
+  load_upsert.py   upsert implementation (PG native + fallback)
+  load_logging.py  audit log helper
+  load_utils.py    shared helpers (chunks, dedup, key checks)
+  pipeline.py      ETL orchestration
+  retry.py         tenacity retry decorator
+
+tests/             unit tests (SQLite) + PG integration (--run-pg)
+scripts/           validate_load, diagnose_db, demo_load
+migrations/        Alembic environment and versions
+data/              sample CSV files
 ```
 
-## Tests
+## Documentation
 
-Install the dev dependencies once:
-
-```bash
-pip install -r requirements-dev.txt
-```
-
-Default suite (in-memory SQLite, no external services):
-
-```bash
-pytest
-```
-
-Run only load module tests:
-
-```bash
-pytest tests/test_load.py -v
-```
-
-Integration suite against a real PostgreSQL — set `DATABASE_URL` first, then opt in with `--run-pg`:
-
-```bash
-# Example: throwaway Postgres in Docker
-docker run --name etl-pg -e POSTGRES_USER=etl -e POSTGRES_PASSWORD=etl -e POSTGRES_DB=etl_db -p 5432:5432 -d postgres:16
-
-# Windows PowerShell
-$env:DATABASE_URL = "postgresql://etl:etl@localhost:5432/etl_db"
-pytest --run-pg
-
-# Unix shell
-DATABASE_URL=postgresql://etl:etl@localhost:5432/etl_db pytest --run-pg
-```
-
-`@pytest.mark.pg` tests are skipped without `--run-pg` and use a transaction-rollback fixture, so committed rows are discarded on teardown.
-
-## Usage Examples
-
-### Example 1: Simple Pipeline Run with Bulk Insert
-
-```python
-from py_etl_pipeline.database import get_session, init_db
-from py_etl_pipeline.pipeline import run_pipeline
-
-init_db()
-session = get_session()
-try:
-    stats = run_pipeline(session, load_mode="bulk")
-    print(f"Loaded {stats['inserted']} rows")
-finally:
-    session.close()
-```
-
-### Example 2: Upsert Mode with CSV
-
-```bash
-export DATABASE_URL="postgresql://user:pass@localhost/mydb"
-export SALES_CSV_PATH="data/sales.csv"
-export LOAD_MODE="upsert"
-python main.py
-```
-
-### Example 3: Query Logs
-
-```python
-from py_etl_pipeline.models import LogEntry
-from py_etl_pipeline.database import get_session
-
-session = get_session()
-logs = session.query(LogEntry).filter_by(source="pipeline.load").all()
-for log in logs:
-    print(f"[{log.level}] {log.message}")
-```
-
-## Performance
-
-### Bulk Insert
-
-- **Throughput**: ~10,000-100,000 rows/sec (varies by row size)
-- **Best for**: Initial loads, no duplicate handling
-- **Memory**: O(n) - all rows kept before flush
-
-### Upsert
-
-- **PostgreSQL**: Highly efficient with native `ON CONFLICT DO UPDATE`
-- **Other DBs**: Falls back to row-by-row (slower)
-- **Recommended batch size**: 5,000-10,000 rows per commit
-
-For large datasets, process in batches and commit between batches for better performance and memory usage.
-
-## Conventions
-
-- Docstrings and user-facing env docs are **English** (common open-source convention).
-- Types follow **PEP 484** / **PEP 526**; SQLAlchemy 2 declarative style with `Mapped[]`.
-- Database identifiers use **snake_case** table names (`sales`, `logs`).
+| Doc | Contents |
+|-----|----------|
+| [docs/architecture.md](docs/architecture.md) | Component map, data flow, schema |
+| [docs/configuration.md](docs/configuration.md) | All environment variables |
+| [docs/development.md](docs/development.md) | Setup, tests, migrations, Docker, scripts |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | How to contribute |
 
 ## License
 
-Specify your license here.
+MIT — see [LICENSE](LICENSE).

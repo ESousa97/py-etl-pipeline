@@ -1,0 +1,35 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: data-py
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d data-py"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+
+  etl:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://postgres:admin@db:5432/data-py
+      LOAD_MODE: bulk
+      RUN_SCHEDULED: "true"
+      SCHEDULE_INTERVAL_MINUTES: "60"
+      SALES_CSV_PATH: /app/data/sales_demo.csv
+    volumes:
+      - ./data:/app/data:ro
+    restart: unless-stopped
+
+volumes:
+  pg_data:
+
