@@ -33,7 +33,7 @@ def main() -> int:
     dbname = (p.path or "").lstrip("/") or "postgres"
     user = p.username or "postgres"
     password = p.password or ""
-    port = p.port or 5432
+    port = p.port or 5433
 
     try:
         import psycopg2  # type: ignore

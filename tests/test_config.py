@@ -29,8 +29,8 @@ def _reload_config():
 
 
 def test_uses_database_url_when_set(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("DATABASE_URL", "postgresql://u:p@host:5432/db")
-    assert _reload_config().database_url() == "postgresql://u:p@host:5432/db"
+    monkeypatch.setenv("DATABASE_URL", "postgresql://u:p@host:5433/db")
+    assert _reload_config().database_url() == "postgresql://u:p@host:5433/db"
 
 
 def test_builds_from_postgres_vars_with_url_encoding(
@@ -48,7 +48,7 @@ def test_uses_defaults_for_host_and_port(monkeypatch: pytest.MonkeyPatch) -> Non
     monkeypatch.setenv("POSTGRES_USER", "u")
     monkeypatch.setenv("POSTGRES_PASSWORD", "p")
     monkeypatch.setenv("POSTGRES_DB", "db")
-    assert _reload_config().database_url() == "postgresql://u:p@localhost:5432/db"
+    assert _reload_config().database_url() == "postgresql://u:p@localhost:5433/db"
 
 
 def test_raises_when_required_vars_missing() -> None:

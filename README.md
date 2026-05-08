@@ -121,6 +121,69 @@ Options:
 TRUNCATE TABLE sales RESTART IDENTITY;
 ```
 
+## Database Migrations (Alembic)
+
+This project uses **Alembic** to manage schema migrations. It is configured to **autogenerate** migration scripts by comparing your SQLAlchemy models (`Base.metadata`) against the current database schema.
+
+### Install
+
+```bash
+pip install -r requirements-dev.txt
+```
+
+### Create a new migration (autogenerate)
+
+After changing models in `src/py_etl_pipeline/models.py`, generate a new revision:
+
+```bash
+# IMPORTANT: keep the target DB at the latest migration before autogenerate
+alembic upgrade head
+alembic revision --autogenerate -m "describe change"
+```
+
+This writes a new file under `migrations/versions/`.
+
+If you see this error:
+
+> `Target database is not up to date.`
+
+it means your database is behind the repository `head`. Fix it by running:
+
+```bash
+alembic upgrade head
+```
+
+### Apply migrations (upgrade)
+
+Apply all pending migrations to the latest version:
+
+```bash
+alembic upgrade head
+```
+
+### Rollback (downgrade)
+
+Rollback one migration:
+
+```bash
+alembic downgrade -1
+```
+
+Rollback to a specific revision id:
+
+```bash
+alembic downgrade <revision_id>
+```
+
+### Point Alembic at a different database (optional)
+
+Alembic reads the same `DATABASE_URL` / `POSTGRES_*` environment variables as the app.
+You can also override the URL for a single command:
+
+```bash
+alembic -x url=postgresql://user:pass@localhost:5432/dbname upgrade head
+```
+
 ## CSV Input (Extract + Transform)
 
 The default pipeline `extract()` reads a CSV file configured by the environment variable `SALES_CSV_PATH`.
@@ -175,6 +238,7 @@ This demonstrates:
 ## Project Layout
 
 ```
+├── alembic.ini          # Alembic configuration
 ├── main.py              # CLI entrypoint
 ├── demo_load.py         # Interactive load module demonstration
 ├── requirements.txt
@@ -182,6 +246,7 @@ This demonstrates:
 ├── pytest.ini           # Test discovery + `pg` marker registration
 ├── .env.example         # Template (no secrets)
 ├── LOAD_MODULE.md       # Load module documentation
+├── migrations/          # Alembic migration environment + versions
 ├── data/
 │   ├── sales_demo.csv   # Demo CSV data
 │   └── sales_test.csv   # Test CSV data
