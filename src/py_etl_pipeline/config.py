@@ -5,7 +5,10 @@ from urllib.parse import quote_plus
 
 from dotenv import load_dotenv
 
-load_dotenv()
+# Avoid letting a developer's local `.env` file interfere with unit tests.
+# In production/CLI usage we still want `.env` to be loaded automatically.
+if not os.getenv("PYTEST_CURRENT_TEST"):
+    load_dotenv()
 
 
 def database_url() -> str:

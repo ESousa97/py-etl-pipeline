@@ -1,0 +1,5 @@
+Product Name,Quantity,Unit Price,Sold At,External ID
+Laptop PRO,3,110.00,2026-05-02T10:30:00Z,ext-1
+"Laptop PRO (duplicate, should win)",4,120.00,2026-05-02T10:31:00Z,ext-1
+Keyboard,2,50.00,2026-05-02T12:00:00Z,ext-3
+No External ID (should be skipped in upsert),1,1.00,2026-05-02T12:30:00Z,

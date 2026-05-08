@@ -16,6 +16,17 @@ from .models import LogEntry, Sale
 logger = logging.getLogger(__name__)
 
 
+def _is_missing_key(value: Any) -> bool:
+    if value is None:
+        return True
+    if isinstance(value, str) and value.strip() == "":
+        return True
+    # pandas/numpy may surface missing strings as NaN (float).
+    if isinstance(value, float) and value != value:  # NaN check
+        return True
+    return False
+
+
 def log_pipeline_event(
     session: Session,
     level: str,
@@ -34,7 +45,10 @@ def _chunks(items: list[Sale], size: int) -> Iterator[list[Sale]]:
 def _dedupe_last_wins(rows: list[Sale], key: str) -> list[Sale]:
     by_key: dict[Any, Sale] = {}
     for r in rows:
-        by_key[getattr(r, key)] = r
+        k = getattr(r, key)
+        if _is_missing_key(k):
+            continue
+        by_key[k] = r
     return list(by_key.values())
 
 
@@ -74,7 +88,7 @@ def load_bulk_insert(session: Session, rows: list[Sale]) -> dict[str, int]:
 def load_upsert(
     session: Session,
     rows: list[Sale],
-    key: Literal["external_id"] = "external_id",
+    key: Literal["external_id", "id"] = "external_id",
 ) -> dict[str, int]:
     if not rows:
         logger.info("No rows to load (upsert)")
@@ -144,8 +158,8 @@ def _upsert_postgresql(
     batch_size: int,
 ) -> tuple[int, int, int]:
     key_column = getattr(Sale, key)
-    skipped_count = sum(1 for r in rows if getattr(r, key) is None)
-    keyed_rows = [r for r in rows if getattr(r, key) is not None]
+    skipped_count = sum(1 for r in rows if _is_missing_key(getattr(r, key)))
+    keyed_rows = [r for r in rows if not _is_missing_key(getattr(r, key))]
 
     inserted_total = 0
     updated_total = 0
@@ -173,7 +187,7 @@ def _upsert_postgresql(
 
         stmt = pg_insert(Sale).values([_row_to_dict(r) for r in batch_unique])
         stmt = stmt.on_conflict_do_update(
-            index_elements=[key],
+            index_elements=[key_column],
             set_={
                 "product_name": stmt.excluded.product_name,
                 "quantity": stmt.excluded.quantity,
@@ -196,9 +210,11 @@ def _upsert_postgresql(
     return inserted_total, updated_total, skipped_count
 
 
-def _upsert_single_row(session: Session, row: Sale, key: str) -> Literal["inserted", "updated", "skipped"]:
+def _upsert_single_row(
+    session: Session, row: Sale, key: str
+) -> Literal["inserted", "updated", "skipped"]:
     key_value = getattr(row, key)
-    if key_value is None:
+    if _is_missing_key(key_value):
         logger.debug("Skipping row: %s is None", key)
         return "skipped"
 
@@ -219,20 +235,24 @@ def _upsert_single_row(session: Session, row: Sale, key: str) -> Literal["insert
 
 
 def _row_to_dict(row: Sale) -> dict[str, Any]:
-    return {
+    out: dict[str, Any] = {
         "external_id": row.external_id,
         "product_name": row.product_name,
         "quantity": row.quantity,
         "unit_price": row.unit_price,
         "sold_at": row.sold_at,
     }
+    # Support upsert by primary key when upstream provides it (rare, but useful).
+    if getattr(row, "id", None) is not None:
+        out["id"] = row.id
+    return out
 
 
 def load(
     session: Session,
     rows: list[Sale],
     mode: Literal["bulk", "upsert"] = "bulk",
-    upsert_key: Literal["external_id"] = "external_id",
+    upsert_key: Literal["external_id", "id"] = "external_id",
 ) -> dict[str, int]:
     if mode == "bulk":
         return load_bulk_insert(session, rows)

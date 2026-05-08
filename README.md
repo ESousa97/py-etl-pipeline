@@ -83,10 +83,43 @@ LOAD_MODE=upsert python main.py
 
 - **PostgreSQL**: Uses native `ON CONFLICT DO UPDATE` for atomic operations
 - **Other DBs**: Falls back to row-by-row processing
-- Skips records with null keys
+- Skips records with missing keys (null / empty / NaN)
 - Logs operation counts (inserted, updated, skipped, failed)
 
 See [LOAD_MODULE.md](LOAD_MODULE.md) for complete documentation.
+
+## Validate Bulk + Upsert (One Command)
+
+To help users validate the load strategies, this repo includes a small, repeatable validation script.
+
+### Quick validation (no PostgreSQL required)
+
+Runs on a fresh local SQLite database and prints inserted/updated/skipped counts:
+
+```bash
+python scripts/validate_load.py
+```
+
+### Validate against PostgreSQL
+
+If you want to validate against a real PostgreSQL, pass an explicit URL (recommended to use a throwaway database):
+
+```powershell
+.\scripts\validate_load.ps1 -DatabaseUrl "postgresql://user:pass@127.0.0.1:5432/data_py_validate"
+```
+
+### Why bulk may fail on the 2nd run
+
+Bulk insert is **insert-only**. If you run the validator against the same database more than once, the first bulk step may fail with a unique-constraint error because the validation data uses fixed keys (e.g. `ext-1`).
+
+Options:
+
+- Use a fresh/throwaway database for validation (recommended)
+- Or truncate the `sales` table before re-running:
+
+```sql
+TRUNCATE TABLE sales RESTART IDENTITY;
+```
 
 ## CSV Input (Extract + Transform)
 
