@@ -9,8 +9,8 @@
 
 [![CI](https://github.com/esousa97/py-etl-pipeline/actions/workflows/ci.yml/badge.svg)](https://github.com/esousa97/py-etl-pipeline/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/esousa97/py-etl-pipeline/actions/workflows/codeql.yml/badge.svg)](https://github.com/esousa97/py-etl-pipeline/actions/workflows/codeql.yml)
-[![Dependency Review](https://github.com/esousa97/py-etl-pipeline/actions/workflows/dependency-review.yml/badge.svg)](https://github.com/esousa97/py-etl-pipeline/actions/workflows/dependency-review.yml)
-[![Publish](https://img.shields.io/badge/Publish-on%20release-blue?style=flat&logo=githubactions&logoColor=white)](https://github.com/esousa97/py-etl-pipeline/actions/workflows/publish.yml)
+[![Dependency review](https://img.shields.io/badge/dependency%20review-in%20CI-0085CA?style=flat&logo=githubactions&logoColor=white)](https://github.com/esousa97/py-etl-pipeline/actions/workflows/ci.yml)
+[![Publish](https://img.shields.io/badge/Publish-release%20%7C%20manual-blue?style=flat&logo=githubactions&logoColor=white)](https://github.com/esousa97/py-etl-pipeline/actions/workflows/publish.yml)
 [![Python](https://img.shields.io/badge/Python-3.11%2B-blue?style=flat&logo=python&logoColor=white)](https://github.com/esousa97/py-etl-pipeline/blob/main/pyproject.toml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat)](LICENSE)
 [![Last Commit](https://img.shields.io/github/last-commit/esousa97/py-etl-pipeline?style=flat)](https://github.com/esousa97/py-etl-pipeline/commits)
@@ -105,7 +105,9 @@ pip install -e .
 
 ### PyPI
 
-There are **no PyPI install badges** in this README yet because distributions are published **only when you publish a GitHub Release** (see `.github/workflows/publish.yml`). Configure **PyPI trusted publishing** (or a token) for the `pypi` environment, then `pip install py-etl-pipeline` will work after the first successful publish.
+There are **no PyPI install badges** in this README yet because uploads to PyPI run **only on a published GitHub Release** (see `.github/workflows/publish.yml`). The same workflow supports **Run workflow** (manual dispatch): it builds wheels/sdists and uploads **artifacts** for inspection, without publishing. Configure **PyPI trusted publishing** (or a token) for the `pypi` environment for release publishes; then `pip install py-etl-pipeline` works after the first successful publish.
+
+**Dependency review** runs as a **CI job on every pull request** (not on plain pushes to `main`), using `actions/dependency-review-action` alongside lint and tests.
 
 ## Quick Start
 
@@ -203,7 +205,7 @@ Database-facing entrypoints are wrapped with **`retry_db`** (Tenacity): transien
 | `migrations/` | Alembic environment and revisions |
 | `scripts/` | `validate_load`, `diagnose_db`, `demo_load` |
 | `tests/` | `pytest` suite (SQLite by default; Postgres behind `--run-pg`) |
-| `.github/workflows/` | CI, CodeQL, dependency review, PyPI publish |
+| `.github/workflows/` | CI (incl. PR dependency review), CodeQL, PyPI publish |
 | `docker-compose.yml` / `Dockerfile` | Local stack and ETL image |
 
 ## Tests
