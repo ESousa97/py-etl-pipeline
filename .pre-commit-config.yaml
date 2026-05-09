@@ -1,0 +1,8 @@
+# See https://pre-commit.com for usage and https://pre-commit.com/hooks.html for more hooks.
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.15.12
+    hooks:
+      - id: ruff
+        args: [--fix, --exit-non-zero-on-fix]
+      - id: ruff-format

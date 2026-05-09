@@ -1,80 +1,259 @@
-# py-etl-pipeline
+<div align="center">
+<h1>py-etl-pipeline</h1>
 
-Minimal ETL pipeline: CSV → PostgreSQL via SQLAlchemy, with bulk insert, upsert, audit logging, retry, scheduling, and Docker Compose support.
+<p>Minimal Python ETL: CSV → PostgreSQL with bulk insert, native upsert, audit logging, retries, optional scheduling, Alembic migrations, Docker Compose, and an optional GraphQL health surface.</p>
+
+  <img src="assets/python.png" alt="py-etl-pipeline banner" width="600px">
+
+  <br>
+
+[![CI](https://github.com/esousa97/py-etl-pipeline/actions/workflows/ci.yml/badge.svg)](https://github.com/esousa97/py-etl-pipeline/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/esousa97/py-etl-pipeline/actions/workflows/codeql.yml/badge.svg)](https://github.com/esousa97/py-etl-pipeline/actions/workflows/codeql.yml)
+[![Dependency Review](https://github.com/esousa97/py-etl-pipeline/actions/workflows/dependency-review.yml/badge.svg)](https://github.com/esousa97/py-etl-pipeline/actions/workflows/dependency-review.yml)
+[![Publish](https://img.shields.io/badge/Publish-on%20release-blue?style=flat&logo=githubactions&logoColor=white)](https://github.com/esousa97/py-etl-pipeline/actions/workflows/publish.yml)
+[![Python](https://img.shields.io/badge/Python-3.11%2B-blue?style=flat&logo=python&logoColor=white)](https://github.com/esousa97/py-etl-pipeline/blob/main/pyproject.toml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat)](LICENSE)
+[![Last Commit](https://img.shields.io/github/last-commit/esousa97/py-etl-pipeline?style=flat)](https://github.com/esousa97/py-etl-pipeline/commits)
+[![Ruff](https://img.shields.io/badge/Ruff-linting-261230?style=flat&logo=ruff&logoColor=white)](https://github.com/astral-sh/ruff)
+[![pytest](https://img.shields.io/badge/tests-pytest-blue?style=flat&logo=pytest&logoColor=white)](https://docs.pytest.org/)
+[![CodeFactor](https://www.codefactor.io/repository/github/esousa97/py-etl-pipeline/badge)](https://www.codefactor.io/repository/github/esousa97/py-etl-pipeline)
+[![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?style=flat&logo=pre-commit&logoColor=white)](https://github.com/esousa97/py-etl-pipeline/blob/main/.pre-commit-config.yaml)
+
+</div>
+
+---
+
+**py-etl-pipeline** is a small, production-minded **ETL** service: **extract** sales rows from CSV (pandas + normalised headers), **transform** with validation and coercion, then **load** into PostgreSQL using either **bulk insert** or **`ON CONFLICT DO UPDATE` upsert**, with **row-level audit logging**, **tenacity** retries for transient DB errors, optional **scheduled** runs, **Alembic** migrations, and **Docker Compose** for Postgres + the worker. An optional **Strawberry GraphQL** ASGI app exposes **health**, **version**, and non-secret runtime hints. Canonical repository: `github.com/esousa97/py-etl-pipeline`.
+
+## Demo (quick smoke test)
+
+Create a virtual environment, install dependencies, point at a SQLite file, and run the bundled demo script (no live Postgres required).
+
+**Linux / macOS (bash)**
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+
+export DATABASE_URL="sqlite:///./demo_smoke.db"
+python scripts/demo_load.py
+```
+
+**Windows (PowerShell)**
+
+```powershell
+py -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+
+$env:DATABASE_URL = "sqlite:///./demo_smoke.db"
+python scripts/demo_load.py
+```
+
+To exercise the full **CLI entrypoint** against PostgreSQL, copy `.env.example` → `.env`, set `DATABASE_URL` (or the discrete `POSTGRES_*` variables used by Compose), ensure your CSV path via `SALES_CSV_PATH`, then run `python main.py` (see [docs/development.md](docs/development.md)).
 
 ## Features
 
-- **Extract** — CSV via pandas with automatic column normalisation
-- **Transform** — type coercion, defaults, row validation
-- **Load** — bulk insert or PostgreSQL-native upsert (`ON CONFLICT DO UPDATE`)
-- **Audit log** — every load operation written to a `logs` table
-- **Resilience** — transient DB failures retried with tenacity (exponential backoff)
-- **Scheduling** — optional recurring runs via the `schedule` library
-- **Migrations** — Alembic with autogenerate against SQLAlchemy models
-- **Docker** — `docker-compose.yml` with Postgres 16 + ETL container
-- **CI** — GitHub Actions runs Ruff (lint + format check) and pytest on pushes and PRs
-- **Dependabot** — weekly pip updates and monthly GitHub Actions updates (see `.github/dependabot.yml`)
-- **GraphQL** — optional Strawberry ASGI app (`py_etl_pipeline.graphql_server:app`) for health/version/ETL hints
+| Area | What you get |
+| ---- | -------------- |
+| Extract | CSV via **pandas** with automatic header normalisation (e.g. `Unit Price` → `unit_price`). |
+| Transform | Type coercion, defaults, and row validation before load. |
+| Load | **Bulk insert** or PostgreSQL-native **upsert** with shared chunking/dedup helpers. |
+| Audit | Every load batch recorded in a **`logs`** table via `load_logging`. |
+| Resilience | **Tenacity** retries with exponential backoff for transient database failures (`retry_db`). |
+| Scheduling | Optional recurring runs using the **`schedule`** library (`RUN_SCHEDULED`). |
+| Migrations | **Alembic** with autogenerate wired to SQLAlchemy models. |
+| Docker | **`docker-compose.yml`** — Postgres 16 plus an ETL image with health-aware startup. |
+| GraphQL (optional) | **Strawberry** ASGI app: `health`, `version`, and safe ETL runtime hints. |
+
+## Tech stack
+
+| Component | Role |
+| --------- | ---- |
+| Python 3.11+ | Language and runtime |
+| SQLAlchemy 2 | ORM, sessions, schema bootstrap |
+| psycopg2 | PostgreSQL driver |
+| pandas | CSV extraction |
+| tenacity | Retry/backoff for DB operations |
+| Alembic | Schema migrations |
+| pytest / pytest-cov | Tests and coverage |
+| Ruff | Lint + format |
+| Strawberry + Starlette + Uvicorn | Optional GraphQL HTTP surface |
+
+## Prerequisites
+
+- Python **3.11+** and `pip`.
+- **PostgreSQL** for production-style runs (`main.py`, Compose stack, `--run-pg` tests). **SQLite** is enough for demos and much of the unit suite.
+
+## Installation and usage
+
+### From source (recommended)
+
+```bash
+git clone https://github.com/esousa97/py-etl-pipeline.git
+cd py-etl-pipeline
+pip install -r requirements.txt
+cp .env.example .env   # then edit credentials and paths
+```
+
+### Development install (editable)
+
+```bash
+pip install -e .
+```
+
+### PyPI
+
+There are **no PyPI install badges** in this README yet because distributions are published **only when you publish a GitHub Release** (see `.github/workflows/publish.yml`). Configure **PyPI trusted publishing** (or a token) for the `pypi` environment, then `pip install py-etl-pipeline` will work after the first successful publish.
 
 ## Quick Start
 
+### One-shot pipeline (bulk)
+
 ```bash
-python -m venv .venv && .venv\Scripts\activate   # Windows
-pip install -r requirements.txt
-cp .env.example .env                             # then fill in DATABASE_URL
 python main.py
 ```
 
-The pipeline creates missing tables on first run and processes the CSV at `SALES_CSV_PATH`.
+`LOAD_MODE` defaults to **`bulk`**. The pipeline bootstraps missing tables and reads the CSV configured by `SALES_CSV_PATH`.
 
-## Run Modes
+### Upsert mode
+
+**Linux / macOS**
 
 ```bash
-# One-shot (default)
+export LOAD_MODE=upsert
 python main.py
-
-# Upsert mode
-$env:LOAD_MODE = "upsert"; python main.py
-
-# Scheduled (runs immediately, then every 60 min)
-$env:RUN_SCHEDULED = "true"; python main.py
-
-# Docker Compose (Postgres + ETL)
-docker compose up --build
 ```
 
-## Project Layout
+**Windows (PowerShell)**
 
+```powershell
+$env:LOAD_MODE = "upsert"
+python main.py
 ```
-src/py_etl_pipeline/
-  config.py        env-var parsing
-  database.py      engine, session factory, schema bootstrap
-  models.py        ORM models: Sale, LogEntry
-  extract.py       CSV extraction
-  transform.py     data validation and type coercion
-  load.py          load strategy dispatcher
-  load_bulk.py     bulk insert implementation
-  load_upsert.py   upsert implementation (PG native + fallback)
-  load_logging.py  audit log helper
-  load_utils.py    shared helpers (chunks, dedup, key checks)
-  pipeline.py      ETL orchestration
-  retry.py         tenacity retry decorator
 
-tests/             unit tests (SQLite) + PG integration (--run-pg)
-scripts/           validate_load, diagnose_db, demo_load
-migrations/        Alembic environment and versions
-data/              sample CSV files
+### Scheduled mode
+
+Runs once at startup, then every `SCHEDULE_INTERVAL_MINUTES` (default **60**):
+
+**Linux / macOS**
+
+```bash
+export RUN_SCHEDULED=true
+python main.py
 ```
+
+**Windows (PowerShell)**
+
+```powershell
+$env:RUN_SCHEDULED = "true"
+python main.py
+```
+
+### Optional GraphQL probe
+
+```bash
+uvicorn py_etl_pipeline.graphql_server:app --host 0.0.0.0 --port 8000
+```
+
+Example body against `http://localhost:8000/graphql`:
+
+```json
+{"query": "query { health version }"}
+```
+
+## Resilience (automatic retries)
+
+Database-facing entrypoints are wrapped with **`retry_db`** (Tenacity): transient errors are retried with backoff before surfacing. Tune behaviour via the Tenacity configuration in [`src/py_etl_pipeline/retry.py`](src/py_etl_pipeline/retry.py).
 
 ## Documentation
 
-| Doc | Contents |
-|-----|----------|
-| [docs/architecture.md](docs/architecture.md) | Component map, data flow, schema |
-| [docs/configuration.md](docs/configuration.md) | All environment variables |
+| Document | Contents |
+| -------- | -------- |
+| [LICENSE](LICENSE) | MIT License |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | Contribution guidelines |
+| [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) | Community standards |
+| [SECURITY.md](SECURITY.md) | Vulnerability reporting |
+| [CHANGELOG.md](CHANGELOG.md) | Version history |
+| [`codecov.yml`](codecov.yml) | Codecov defaults |
+| [`.pre-commit-config.yaml`](.pre-commit-config.yaml) | Local + CI-friendly Ruff hooks |
+| [docs/architecture.md](docs/architecture.md) | Components, data flow, schema |
+| [docs/configuration.md](docs/configuration.md) | Environment variables |
 | [docs/development.md](docs/development.md) | Setup, tests, migrations, Docker, scripts |
-| [CONTRIBUTING.md](CONTRIBUTING.md) | How to contribute |
+
+## Project layout
+
+| Path | Role |
+| ---- | ---- |
+| `src/py_etl_pipeline/config.py` | Environment loading and DSN construction |
+| `src/py_etl_pipeline/database.py` | Engine, session factory, `init_db` |
+| `src/py_etl_pipeline/models.py` | SQLAlchemy models (`Sale`, `LogEntry`, …) |
+| `src/py_etl_pipeline/extract.py` | CSV → DataFrame |
+| `src/py_etl_pipeline/transform.py` | Validation and coercion |
+| `src/py_etl_pipeline/load.py` | Load strategy dispatcher |
+| `src/py_etl_pipeline/load_bulk.py` | Bulk insert path |
+| `src/py_etl_pipeline/load_upsert.py` | Upsert path (PG-native + safeguards) |
+| `src/py_etl_pipeline/load_logging.py` | Audit log helper |
+| `src/py_etl_pipeline/load_utils.py` | Chunking, dedup, key checks |
+| `src/py_etl_pipeline/pipeline.py` | End-to-end orchestration |
+| `src/py_etl_pipeline/retry.py` | Shared retry decorator |
+| `src/py_etl_pipeline/graphql_server.py` | Optional Strawberry ASGI app |
+| `main.py` | CLI entry: bootstrap + run (scheduled or one-shot) |
+| `migrations/` | Alembic environment and revisions |
+| `scripts/` | `validate_load`, `diagnose_db`, `demo_load` |
+| `tests/` | `pytest` suite (SQLite by default; Postgres behind `--run-pg`) |
+| `.github/workflows/` | CI, CodeQL, dependency review, PyPI publish |
+| `docker-compose.yml` / `Dockerfile` | Local stack and ETL image |
+
+## Tests
+
+```bash
+pip install -r requirements.txt
+pytest -q
+```
+
+PostgreSQL integration tests are opt-in:
+
+```bash
+pytest --run-pg
+```
+
+### Coverage
+
+Coverage is collected on Python **3.12** in CI and uploaded to **Codecov**.
+
+```bash
+pip install -r requirements.txt
+pytest --cov=py_etl_pipeline --cov-report=term-missing
+```
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md).
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+[MIT](LICENSE).
+
+<div align="center">
+
+## Author
+
+**Enoque Sousa**
+
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=flat&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/enoque-sousa-bb89aa168/)
+[![GitHub](https://img.shields.io/badge/GitHub-100000?style=flat&logo=github&logoColor=white)](https://github.com/esousa97)
+[![Portfolio](https://img.shields.io/badge/Portfolio-FF5722?style=flat&logo=target&logoColor=white)](https://enoquesousa.vercel.app)
+
+**[⬆ Back to Top](#py-etl-pipeline)**
+
+Made with ❤️ by [Enoque Sousa](https://github.com/esousa97)
+
+**Project status:** Study project
+
+</div>

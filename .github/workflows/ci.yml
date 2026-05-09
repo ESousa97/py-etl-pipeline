@@ -39,4 +39,17 @@ jobs:
         run: ruff format --check .
 
       - name: Pytest
-        run: pytest -q
+        shell: bash
+        run: |
+          if [ "${{ matrix.python-version }}" = "3.12" ]; then
+            pytest -q --cov=py_etl_pipeline --cov-report=xml --cov-report=term-missing
+          else
+            pytest -q
+          fi
+
+      - name: Upload coverage to Codecov
+        if: matrix.python-version == '3.12'
+        uses: codecov/codecov-action@v5
+        with:
+          files: coverage.xml
+          fail_ci_if_error: false
