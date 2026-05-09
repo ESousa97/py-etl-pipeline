@@ -6,7 +6,7 @@ Thanks for your interest in contributing!
 
 ```bash
 python -m venv .venv
-pip install -r requirements-dev.txt
+pip install -r requirements.txt
 ```
 
 ## Running tests
@@ -23,6 +23,7 @@ pytest --run-pg
 
 ## Code style
 
+- Run `ruff check .` and `ruff format .` before opening a pull request (CI enforces both).
 - Keep modules small and focused (prefer < 300 lines where reasonable).
 - Keep public APIs stable (avoid breaking imports used by `main.py`, scripts, and tests).
 - Prefer readable names and small functions over cleverness.

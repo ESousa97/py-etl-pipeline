@@ -35,4 +35,3 @@ def test_log_pipeline_event(session: Session) -> None:
     assert entry is not None
     assert entry.level == "INFO"
     assert entry.message == "Test log message"
-

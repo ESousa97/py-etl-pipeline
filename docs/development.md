@@ -11,7 +11,7 @@ python -m venv .venv
 # Linux / macOS
 source .venv/bin/activate
 
-pip install -r requirements-dev.txt   # includes pytest and alembic
+pip install -r requirements.txt         # runtime, tests, ruff, Strawberry, Uvicorn
 cp .env.example .env                  # then edit .env with your credentials
 ```
 
@@ -52,6 +52,43 @@ Product Name,Quantity,Unit Price,Sold At,External ID
 Laptop,2,1299.99,2026-05-01T10:30:00Z,ext-001
 Mouse,5,29.99,2026-05-01T11:00:00Z,ext-002
 ```
+
+## Lint and format
+
+Uses [Ruff](https://docs.astral.sh/ruff/) (configured in `pyproject.toml`).
+
+```bash
+ruff check .
+ruff format .
+```
+
+Continuous Integration runs `ruff check`, `ruff format --check`, and `pytest` on pushes and pull requests (see `.github/workflows/ci.yml`).
+
+## GraphQL API (optional)
+
+A small read-only schema exposes `health`, `version`, and non-secret ETL runtime hints (`loadBatchSize`, default `LOAD_MODE`, `RUN_SCHEDULED` default). Strawberry and Uvicorn are listed in `requirements.txt` together with the rest of the stack.
+
+Run the ASGI app (from repo root, with `src` on `PYTHONPATH` or after `pip install -e .`):
+
+```bash
+uvicorn py_etl_pipeline.graphql_server:app --host 0.0.0.0 --port 8000
+```
+
+Example query:
+
+```graphql
+query {
+  health
+  version
+  etl {
+    loadBatchSize
+    defaultLoadMode
+    scheduledDefault
+  }
+}
+```
+
+Post JSON to `http://localhost:8000/graphql` with body `{"query": "query { health }"}`.
 
 ## Tests
 

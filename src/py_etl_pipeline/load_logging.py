@@ -14,4 +14,3 @@ def log_pipeline_event(
     source: str = "pipeline.load",
 ) -> None:
     session.add(LogEntry(level=level, message=message, source=source))
-

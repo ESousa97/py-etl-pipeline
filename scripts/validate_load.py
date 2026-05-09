@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 import os
-from pathlib import Path
-
-from sqlalchemy import select
 
 # Allow running from repository root without installing the package: add src/ to sys.path
 import sys
+from pathlib import Path
+
+from sqlalchemy import select
 
 ROOT = Path(__file__).resolve().parents[1]
 SRC_PATH = ROOT / "src"
@@ -121,7 +121,8 @@ def main() -> int:
         for r in rows:
             print(
                 f"- id={r.id} external_id={r.external_id!r} "
-                f"product_name={r.product_name!r} qty={r.quantity} unit_price={r.unit_price} sold_at={r.sold_at}"
+                f"product_name={r.product_name!r} qty={r.quantity} "
+                f"unit_price={r.unit_price} sold_at={r.sold_at}"
             )
     finally:
         session.close()
@@ -132,4 +133,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

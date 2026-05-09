@@ -32,9 +32,7 @@ def load(
     return load_records(session, rows, mode=mode)
 
 
-def run_pipeline(
-    session: Session, load_mode: Literal["bulk", "upsert"] = "bulk"
-) -> dict[str, int]:
+def run_pipeline(session: Session, load_mode: Literal["bulk", "upsert"] = "bulk") -> dict[str, int]:
     raw_list = list(extract(session))
     prepared = transform(raw_list)
     load_summary = load(session, prepared, mode=load_mode)

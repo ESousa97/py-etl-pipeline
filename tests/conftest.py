@@ -32,9 +32,7 @@ def pytest_addoption(parser: pytest.Parser) -> None:
     )
 
 
-def pytest_collection_modifyitems(
-    config: pytest.Config, items: list[pytest.Item]
-) -> None:
+def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item]) -> None:
     """Skip @pytest.mark.pg tests unless --run-pg is supplied."""
     if config.getoption("--run-pg"):
         return
@@ -58,9 +56,7 @@ def sqlite_engine() -> Iterator[Engine]:
 @pytest.fixture
 def session(sqlite_engine: Engine) -> Iterator[Session]:
     """Session bound to the in-memory SQLite engine."""
-    factory = sessionmaker(
-        bind=sqlite_engine, autoflush=False, autocommit=False, future=True
-    )
+    factory = sessionmaker(bind=sqlite_engine, autoflush=False, autocommit=False, future=True)
     s = factory()
     try:
         yield s
@@ -116,9 +112,7 @@ def pg_session(pg_engine: Engine) -> Iterator[Session]:
     """
     connection = pg_engine.connect()
     outer = connection.begin()
-    factory = sessionmaker(
-        bind=connection, autoflush=False, autocommit=False, future=True
-    )
+    factory = sessionmaker(bind=connection, autoflush=False, autocommit=False, future=True)
     s = factory()
     try:
         yield s

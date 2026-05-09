@@ -45,4 +45,3 @@ def load_bulk_insert(session: Session, rows: list[Sale]) -> dict[str, int]:
         logger.error("Bulk insert failed: %s", e)
         log_pipeline_event(session, "ERROR", f"Bulk insert failed: {str(e)}")
         raise
-

@@ -116,7 +116,12 @@ def demo_skip_no_key(session) -> None:
     print(f"\n{_SEP}\nDEMO 4: Upsert — Skip Records Without external_id\n{_SEP}")
 
     valid = [
-        Sale(external_id=f"skip-demo-{i:05d}", product_name=f"Valid {i}", quantity=1, unit_price=Decimal("10.00"))
+        Sale(
+            external_id=f"skip-demo-{i:05d}",
+            product_name=f"Valid {i}",
+            quantity=1,
+            unit_price=Decimal("10.00"),
+        )
         for i in range(25)
     ]
     no_key = [
@@ -137,8 +142,15 @@ def demo_manual_logging(session) -> None:
     """Write and query manual log entries."""
     print(f"\n{_SEP}\nDEMO 5: Manual Logging\n{_SEP}")
 
-    log_pipeline_event(session, "INFO", "Processed vendor ABC monthly export (5000 records)", source="vendor_sync.abc")
-    log_pipeline_event(session, "WARNING", "23 records skipped — missing external_id", source="vendor_sync.abc")
+    log_pipeline_event(
+        session,
+        "INFO",
+        "Processed vendor ABC monthly export (5000 records)",
+        source="vendor_sync.abc",
+    )
+    log_pipeline_event(
+        session, "WARNING", "23 records skipped — missing external_id", source="vendor_sync.abc"
+    )
     session.flush()
 
     logs = session.query(LogEntry).filter_by(source="vendor_sync.abc").all()

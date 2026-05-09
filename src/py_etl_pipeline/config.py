@@ -23,9 +23,7 @@ def database_url() -> str:
     db = os.getenv("POSTGRES_DB", "")
 
     if not all([user, password, db]):
-        raise ValueError(
-            "Set DATABASE_URL or POSTGRES_USER, POSTGRES_PASSWORD, and POSTGRES_DB."
-        )
+        raise ValueError("Set DATABASE_URL or POSTGRES_USER, POSTGRES_PASSWORD, and POSTGRES_DB.")
 
     safe_user = quote_plus(user)
     safe_password = quote_plus(password)

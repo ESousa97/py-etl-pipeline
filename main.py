@@ -49,16 +49,16 @@ def main(load_mode: Literal["bulk", "upsert"] = "bulk") -> None:
             session.close()
 
     def _print_summary(stats: dict[str, int]) -> None:
-        print(f"\n{'='*60}")
+        print(f"\n{'=' * 60}")
         print("Pipeline Summary:")
         for key, value in stats.items():
             print(f"  {key}: {value}")
-        print(f"{'='*60}\n")
+        print(f"{'=' * 60}\n")
 
     if not run_scheduled:
-        print(f"\n{'='*60}")
+        print(f"\n{'=' * 60}")
         print(f"Starting ETL Pipeline (load_mode={load_mode})")
-        print(f"{'='*60}\n")
+        print(f"{'=' * 60}\n")
         _print_summary(_run_once())
         return
 

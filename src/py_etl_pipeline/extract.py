@@ -9,7 +9,6 @@ from typing import Any
 
 import pandas as pd
 
-
 _NON_ALNUM = re.compile(r"[^a-z0-9]+")
 
 

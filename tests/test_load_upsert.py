@@ -122,4 +122,3 @@ def test_load_upsert_postgresql_native(pg_session: Session) -> None:
     assert queried.product_name == "PGProductUpdated"
     assert queried.quantity == 10
     assert queried.unit_price == Decimal("20.00")
-

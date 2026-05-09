@@ -166,4 +166,3 @@ def _upsert_single_row(
     session.add(row)
     session.flush()
     return "inserted"
-

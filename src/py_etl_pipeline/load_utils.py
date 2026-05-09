@@ -14,9 +14,7 @@ def is_missing_key(value: Any) -> bool:
     if isinstance(value, str) and value.strip() == "":
         return True
     # pandas/numpy may surface missing strings as NaN (float).
-    if isinstance(value, float) and value != value:  # NaN check
-        return True
-    return False
+    return isinstance(value, float) and value != value  # NaN
 
 
 def chunks(items: list[Sale], size: int) -> Iterator[list[Sale]]:
@@ -46,4 +44,3 @@ def row_to_dict(row: Sale) -> dict[str, Any]:
     if getattr(row, "id", None) is not None:
         out["id"] = row.id
     return out
-

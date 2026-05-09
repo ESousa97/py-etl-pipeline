@@ -68,9 +68,9 @@ def test_load_creates_log_entries_on_success(session: Session) -> None:
     load_bulk_insert(session, [sale])
     session.flush()
 
-    entry = session.query(LogEntry).filter(
-        LogEntry.message.contains("Bulk insert completed")
-    ).first()
+    entry = (
+        session.query(LogEntry).filter(LogEntry.message.contains("Bulk insert completed")).first()
+    )
     assert entry is not None
     assert entry.level == "INFO"
     assert "1 rows inserted" in entry.message
@@ -120,4 +120,3 @@ def test_load_bulk_insert_batches_rows(
     result = load_mod.load_bulk_insert(session, sales)
     assert result == {"inserted": 5, "skipped": 0, "failed": 0}
     assert session.query(Sale).count() == 5
-

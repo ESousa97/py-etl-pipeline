@@ -56,4 +56,3 @@ def retry_db(fn: F) -> F:
         stop=stop_after_attempt(_attempts()),
         wait=wait_exponential(multiplier=_base_delay(), min=_base_delay(), max=_max_delay()),
     )(fn)  # type: ignore[return-value]
-
