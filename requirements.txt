@@ -8,7 +8,7 @@ schedule>=1.2.2
 alembic>=1.18.4
 
 # Tests, lint, CI, optional GraphQL HTTP server
-pytest>=9.0.3
+pytest>=9.1.1
 pytest-cov>=6.0.0
 ruff>=0.15.12
 strawberry-graphql>=0.216.0
