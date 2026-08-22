@@ -1,11 +1,11 @@
 {
   "permissions": {
     "allow": [
-      "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\sousa\\\\projects\\\\github-esousa97\\\\py-etl-pipeline\" -Recurse -Force)",
+      "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\sousa\\\\projects\\\\github-enoquesousa\\\\py-etl-pipeline\" -Recurse -Force)",
       "Bash(Select-Object FullName)",
       "Bash(Sort-Object FullName)",
-      "Bash(Remove-Item \"c:\\\\Users\\\\sousa\\\\projects\\\\github-esousa97\\\\py-etl-pipeline\\\\tests\\\\test_load.py\" -Force)",
-      "Bash(Remove-Item \"c:\\\\Users\\\\sousa\\\\projects\\\\github-esousa97\\\\py-etl-pipeline\\\\demo_load.py\" -Force)"
+      "Bash(Remove-Item \"c:\\\\Users\\\\sousa\\\\projects\\\\github-enoquesousa\\\\py-etl-pipeline\\\\tests\\\\test_load.py\" -Force)",
+      "Bash(Remove-Item \"c:\\\\Users\\\\sousa\\\\projects\\\\github-enoquesousa\\\\py-etl-pipeline\\\\demo_load.py\" -Force)"
     ]
   }
 }
