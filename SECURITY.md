@@ -10,8 +10,8 @@ If you believe you have found a security vulnerability in this project, please *
 
 Instead, report it through one of these channels:
 
-1. **GitHub Security Advisories** — open a [private security advisory](https://github.com/esousa97/py-etl-pipeline/security/advisories/new) for this repository (preferred when the feature is enabled).
-2. **Maintainer contact** — reach out via the contact options on the maintainer’s [GitHub profile](https://github.com/esousa97).
+1. **GitHub Security Advisories** — open a [private security advisory](https://github.com/enoquesousa/py-etl-pipeline/security/advisories/new) for this repository (preferred when the feature is enabled).
+2. **Maintainer contact** — reach out via the contact options on the maintainer’s [GitHub profile](https://github.com/enoquesousa).
 
 Include a short description of the issue, affected components (if known), and steps to reproduce or a proof of concept where safe to share.
 

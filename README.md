@@ -7,23 +7,23 @@
 
   <br>
 
-[![CI](https://github.com/esousa97/py-etl-pipeline/actions/workflows/ci.yml/badge.svg)](https://github.com/esousa97/py-etl-pipeline/actions/workflows/ci.yml)
-[![CodeQL](https://github.com/esousa97/py-etl-pipeline/actions/workflows/codeql.yml/badge.svg)](https://github.com/esousa97/py-etl-pipeline/actions/workflows/codeql.yml)
-[![Dependency review](https://img.shields.io/badge/dependency%20review-in%20CI-0085CA?style=flat&logo=githubactions&logoColor=white)](https://github.com/esousa97/py-etl-pipeline/actions/workflows/ci.yml)
-[![Publish](https://img.shields.io/badge/Publish-release%20%7C%20manual-blue?style=flat&logo=githubactions&logoColor=white)](https://github.com/esousa97/py-etl-pipeline/actions/workflows/publish.yml)
-[![Python](https://img.shields.io/badge/Python-3.11%2B-blue?style=flat&logo=python&logoColor=white)](https://github.com/esousa97/py-etl-pipeline/blob/main/pyproject.toml)
+[![CI](https://github.com/enoquesousa/py-etl-pipeline/actions/workflows/ci.yml/badge.svg)](https://github.com/enoquesousa/py-etl-pipeline/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/enoquesousa/py-etl-pipeline/actions/workflows/codeql.yml/badge.svg)](https://github.com/enoquesousa/py-etl-pipeline/actions/workflows/codeql.yml)
+[![Dependency review](https://img.shields.io/badge/dependency%20review-in%20CI-0085CA?style=flat&logo=githubactions&logoColor=white)](https://github.com/enoquesousa/py-etl-pipeline/actions/workflows/ci.yml)
+[![Publish](https://img.shields.io/badge/Publish-release%20%7C%20manual-blue?style=flat&logo=githubactions&logoColor=white)](https://github.com/enoquesousa/py-etl-pipeline/actions/workflows/publish.yml)
+[![Python](https://img.shields.io/badge/Python-3.11%2B-blue?style=flat&logo=python&logoColor=white)](https://github.com/enoquesousa/py-etl-pipeline/blob/main/pyproject.toml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat)](LICENSE)
-[![Last Commit](https://img.shields.io/github/last-commit/esousa97/py-etl-pipeline?style=flat)](https://github.com/esousa97/py-etl-pipeline/commits)
+[![Last Commit](https://img.shields.io/github/last-commit/enoquesousa/py-etl-pipeline?style=flat)](https://github.com/enoquesousa/py-etl-pipeline/commits)
 [![Ruff](https://img.shields.io/badge/Ruff-linting-261230?style=flat&logo=ruff&logoColor=white)](https://github.com/astral-sh/ruff)
 [![pytest](https://img.shields.io/badge/tests-pytest-blue?style=flat&logo=pytest&logoColor=white)](https://docs.pytest.org/)
-[![CodeFactor](https://www.codefactor.io/repository/github/esousa97/py-etl-pipeline/badge)](https://www.codefactor.io/repository/github/esousa97/py-etl-pipeline)
-[![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?style=flat&logo=pre-commit&logoColor=white)](https://github.com/esousa97/py-etl-pipeline/blob/main/.pre-commit-config.yaml)
+[![CodeFactor](https://www.codefactor.io/repository/github/enoquesousa/py-etl-pipeline/badge)](https://www.codefactor.io/repository/github/enoquesousa/py-etl-pipeline)
+[![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?style=flat&logo=pre-commit&logoColor=white)](https://github.com/enoquesousa/py-etl-pipeline/blob/main/.pre-commit-config.yaml)
 
 </div>
 
 ---
 
-**py-etl-pipeline** is a small, production-minded **ETL** service: **extract** sales rows from CSV (pandas + normalised headers), **transform** with validation and coercion, then **load** into PostgreSQL using either **bulk insert** or **`ON CONFLICT DO UPDATE` upsert**, with **row-level audit logging**, **tenacity** retries for transient DB errors, optional **scheduled** runs, **Alembic** migrations, and **Docker Compose** for Postgres + the worker. An optional **Strawberry GraphQL** ASGI app exposes **health**, **version**, and non-secret runtime hints. Canonical repository: `github.com/esousa97/py-etl-pipeline`.
+**py-etl-pipeline** is a small, production-minded **ETL** service: **extract** sales rows from CSV (pandas + normalised headers), **transform** with validation and coercion, then **load** into PostgreSQL using either **bulk insert** or **`ON CONFLICT DO UPDATE` upsert**, with **row-level audit logging**, **tenacity** retries for transient DB errors, optional **scheduled** runs, **Alembic** migrations, and **Docker Compose** for Postgres + the worker. An optional **Strawberry GraphQL** ASGI app exposes **health**, **version**, and non-secret runtime hints. Canonical repository: `github.com/enoquesousa/py-etl-pipeline`.
 
 ## Demo (quick smoke test)
 
@@ -91,7 +91,7 @@ To exercise the full **CLI entrypoint** against PostgreSQL, copy `.env.example` 
 ### From source (recommended)
 
 ```bash
-git clone https://github.com/esousa97/py-etl-pipeline.git
+git clone https://github.com/enoquesousa/py-etl-pipeline.git
 cd py-etl-pipeline
 pip install -r requirements.txt
 cp .env.example .env   # then edit credentials and paths
@@ -249,12 +249,12 @@ See [CHANGELOG.md](CHANGELOG.md).
 **Enoque Sousa**
 
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=flat&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/enoque-sousa-bb89aa168/)
-[![GitHub](https://img.shields.io/badge/GitHub-100000?style=flat&logo=github&logoColor=white)](https://github.com/esousa97)
+[![GitHub](https://img.shields.io/badge/GitHub-100000?style=flat&logo=github&logoColor=white)](https://github.com/enoquesousa)
 [![Portfolio](https://img.shields.io/badge/Portfolio-FF5722?style=flat&logo=target&logoColor=white)](https://enoquesousa.vercel.app)
 
 **[⬆ Back to Top](#py-etl-pipeline)**
 
-Made with ❤️ by [Enoque Sousa](https://github.com/esousa97)
+Made with ❤️ by [Enoque Sousa](https://github.com/enoquesousa)
 
 **Project status:** Study project
 
