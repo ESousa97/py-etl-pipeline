@@ -19,4 +19,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Optional Strawberry GraphQL ASGI app for health, version, and non-secret runtime hints
 - CI (Ruff + pytest) and Dependabot configuration
 
-[0.1.0]: https://github.com/esousa97/py-etl-pipeline/releases
+[0.1.0]: https://github.com/enoquesousa/py-etl-pipeline/releases

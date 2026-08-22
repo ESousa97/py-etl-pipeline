@@ -13,7 +13,7 @@ requires-python = ">=3.11"
 dynamic = ["dependencies"]
 
 [project.urls]
-"Homepage" = "https://github.com/ESousa97/py-etl-pipeline"
+"Homepage" = "https://github.com/enoquesousa/py-etl-pipeline"
 
 [tool.setuptools.packages.find]
 where = ["src"]

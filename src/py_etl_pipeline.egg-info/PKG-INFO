@@ -4,7 +4,7 @@ Version: 0.1.0
 Summary: Minimal ETL pipeline with bulk loads and PostgreSQL upsert support
 Author-email: You <you@example.com>
 License: MIT
-Project-URL: Homepage, https://github.com/ESousa97/py-etl-pipeline
+Project-URL: Homepage, https://github.com/enoquesousa/py-etl-pipeline
 Requires-Python: >=3.11
 Description-Content-Type: text/markdown
 License-File: LICENSE
